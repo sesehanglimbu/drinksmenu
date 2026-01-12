@@ -1,0 +1,118 @@
+:root { --gap: 12px; }
+
+/* make calculations include borders/padding */
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    margin: 0;
+    padding: 20px;
+    background: #f7f7f8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+}
+
+.grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--gap);
+    width: min(640px, 100%);
+    max-width: 640px;
+    align-content: center;
+}
+
+/* Use calc so gaps and borders don't push items to the next line */
+.cell {
+    flex: 0 0 calc((100% - (2 * var(--gap))) / 3);
+    height: 160px;
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 1.25rem;
+    color: #222;
+    overflow: hidden;
+}
+
+.cell figure {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.cell img {
+    width: 100%;
+    height: 62%;
+    object-fit: cover;
+    display: block;
+}
+
+.cell .caption {
+    padding: 8px 10px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    justify-content: center;
+    flex: 1 1 auto;
+}
+
+.name-jp { font-size: 1rem; font-weight: 700; }
+.name-furigana { font-size: 0.9rem; color: #666; }
+.name-en { font-size: 0.9rem; color: #333; font-weight: 500; }
+
+/* On narrow screens use two columns */
+@media (max-width: 420px) {
+    .cell {
+        flex: 0 0 calc((100% - var(--gap)) / 2);
+        height: 120px;
+        font-size: 1rem;
+    }
+    .cell img { height: 55%; }
+    .name-jp { font-size: 0.95rem; }
+    .name-furigana, .name-en { font-size: 0.85rem; }
+}
+
+/* Table layout for image + details */
+.item-table {
+    width: 100%;
+    max-width: 920px;
+    border-collapse: collapse;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+}
+.item-table thead th {
+    text-align: left;
+    padding: 10px 12px;
+    border-bottom: 1px solid #eaeaea;
+    background: #fafafa;
+    font-weight: 700;
+}
+.item-table tbody td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #f1f1f1;
+    vertical-align: top;
+}
+.thumb { width: 160px; }
+.thumb img { width: 140px; height: auto; display: block; border-radius: 6px; }
+.details { padding-left: 8px; }
+.details .name-jp { font-size: 1.05rem; font-weight: 700; }
+.details .name-furigana { color: #666; margin-top: 4px; }
+.details .name-en { color: #333; font-weight: 500; margin-top: 6px; }
+
+@media (max-width: 680px) {
+    .item-table, .item-table tbody td, .item-table thead th { display: block; width: 100%; }
+    .item-table thead { display: none; }
+    .item-table tbody tr { margin-bottom: 12px; border-bottom: none; }
+    .thumb { width: 100%; }
+    .thumb img { width: 100%; height: auto; }
+}
+

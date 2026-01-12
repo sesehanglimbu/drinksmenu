@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Objects + DOM Final Project</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>Final Project: Student Manager (Objects + DOM)</h1>
+  <p class="muted">Add students, update grade, remove students, and learn object concepts live.</p>
+
+  <div class="panel">
+    <div class="row">
+      <input id="nameInput" placeholder="Name (e.g., Kiran)" />
+      <input id="ageInput" placeholder="Age (e.g., 20)" />
+      <input id="courseInput" placeholder="Course (e.g., JavaScript)" />
+      <input id="cityInput" placeholder="City (optional)" />
+      <button id="addBtn">Add Student</button>
+      <button id="demoBtn" class="secondary">Run Concepts Demo</button>
+    </div>
+
+    <div class="row">
+      <button id="cloneBtn" class="secondary">Clone First Student (Shallow)</button>
+      <button id="deepCloneBtn" class="secondary">Clone First Student (Deep)</button>
+      <button id="clearBtn" class="danger">Clear All</button>
+    </div>
+
+    <div id="log" class="codebox small">Logs will appear here...</div>
+  </div>
+
+  <div id="list" class="grid"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

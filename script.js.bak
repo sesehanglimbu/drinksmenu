@@ -1,0 +1,361 @@
+"use strict";
+
+/* =========================================================
+   FINAL PROJECT: Student Manager (Objects + DOM)
+   Covers:
+   1) Objects: basics (key-value pairs)
+   2) Objects: add/update/delete + dot/bracket access
+   3) Object references and copying (reference, shallow, deep)
+   4) Garbage collection (concept via losing references)
+   5) Methods + "this"
+   6) Constructor + operator "new"
+   7) Optional chaining ?. (safe access)
+   8) Symbol type (unique key)
+   9) Object to primitive conversion (Symbol.toPrimitive)
+   ========================================================= */
+
+// ---------- DOM ELEMENTS ----------
+const nameInput = document.getElementById("nameInput");
+const ageInput = document.getElementById("ageInput");
+const courseInput = document.getElementById("courseInput");
+const cityInput = document.getElementById("cityInput");
+
+const addBtn = document.getElementById("addBtn");
+const demoBtn = document.getElementById("demoBtn");
+const cloneBtn = document.getElementById("cloneBtn");
+const deepCloneBtn = document.getElementById("deepCloneBtn");
+const clearBtn = document.getElementById("clearBtn");
+
+const list = document.getElementById("list");
+const logBox = document.getElementById("log");
+
+// ---------- SIMPLE LOGGER (prints to UI + console) ----------
+function log(message) {
+  console.log(message);
+  logBox.textContent += "\n" + message;
+}
+
+// Clear log
+function resetLog() {
+  logBox.textContent = "Logs will appear here...";
+}
+
+// ---------- SYMBOL KEY (unique) ----------
+/*
+  Symbol is unique and safe from key collisions.
+  We'll store internal id using a symbol key so it doesn't conflict with normal keys like "id".
+*/
+const INTERNAL_ID = Symbol("internal_id");
+
+// ---------- CONSTRUCTOR FUNCTION + "new" ----------
+/*
+  Constructor = template for creating many student objects.
+  new does:
+  1) create empty object
+  2) set this = that object
+  3) run constructor code
+  4) return the object
+*/
+function Student(name, age, course, city) {
+  this.name = name;          // object property (key-value)
+  this.age = age;            // number
+  this.course = course;      // string
+
+  // nested object (to demonstrate optional chaining and deep copy)
+  this.address = city ? { city: city } : undefined;
+
+  // Symbol key property
+  this[INTERNAL_ID] = Math.floor(Math.random() * 90000) + 10000;
+
+  // method (function inside object) + this
+  this.introduce = function () {
+    // object -> primitive conversion will be demonstrated later too
+    return `Hi! I'm ${this.name} and I study ${this.course}.`;
+  };
+
+  // Object to primitive conversion:
+  // When JS needs string/number, it calls Symbol.toPrimitive if exists.
+  this[Symbol.toPrimitive] = function (hint) {
+    if (hint === "string") return `Student(${this.name})`;
+    if (hint === "number") return this.age; // treat student as age in number context
+    return this.name; // default
+  };
+}
+
+// ---------- DATA STORE ----------
+/*
+  This is our "database": array of student objects.
+*/
+let students = [];
+
+// ---------- RENDER (DOM) ----------
+function render() {
+  list.innerHTML = "";
+
+  students.forEach((student, index) => {
+    const card = document.createElement("div");
+    card.className = "card";
+
+    // Optional chaining:
+    // student.address might be undefined; address?.city safely returns undefined.
+    const cityText = student.address?.city ?? "(no city)";
+
+    card.innerHTML = `
+      <h3>${student.name}</h3>
+      <p class="kv"><b>Age:</b> ${student.age}</p>
+      <p class="kv"><b>Course:</b> ${student.course}</p>
+      <p class="kv"><b>City:</b> ${cityText}</p>
+      <p class="kv"><b>Symbol ID:</b> ${student[INTERNAL_ID]}</p>
+
+      <div class="row">
+        <button data-action="introduce" data-index="${index}">Introduce (method)</button>
+        <button data-action="update" data-index="${index}" class="secondary">Update Grade</button>
+        <button data-action="toggleCity" data-index="${index}" class="secondary">Toggle City</button>
+        <button data-action="remove" data-index="${index}" class="danger">Remove</button>
+      </div>
+
+      <div class="small">
+        <div><b>Object → primitive demo:</b></div>
+        <div class="codebox small">String(student) = ${String(student)}</div>
+        <div class="codebox small">student + 5 (age + 5) = ${student + 5}</div>
+      </div>
+    `;
+
+    list.appendChild(card);
+  });
+}
+
+// ---------- ADD STUDENT (Objects basics + constructor/new) ----------
+addBtn.addEventListener("click", () => {
+  const name = nameInput.value.trim();
+  const age = Number(ageInput.value);
+  const course = courseInput.value.trim();
+  const city = cityInput.value.trim();
+
+  if (!name || !Number.isFinite(age) || age <= 0 || !course) {
+    alert("Please enter valid Name, Age (>0), and Course.");
+    return;
+  }
+
+  // Create new object using constructor + new
+  const s = new Student(name, age, course, city || undefined);
+
+  // Add extra property dynamically (object is dynamic)
+  // Using dot notation:
+  s.grade = "Not set";
+
+  // Also show bracket notation (same effect):
+  s["status"] = "active";
+
+  students.push(s);
+
+  log(`Added: ${s.name} | INTERNAL_ID(Symbol): ${s[INTERNAL_ID]} | grade=${s.grade}`);
+  render();
+
+  nameInput.value = "";
+  ageInput.value = "";
+  courseInput.value = "";
+  cityInput.value = "";
+});
+
+// ---------- EVENT DELEGATION FOR BUTTONS ON CARDS ----------
+list.addEventListener("click", (e) => {
+  const btn = e.target.closest("button");
+  if (!btn) return;
+
+  const action = btn.dataset.action;
+  const index = Number(btn.dataset.index);
+  const student = students[index];
+
+  if (!student) return;
+
+  if (action === "introduce") {
+    // method + this
+    alert(student.introduce());
+    log(`introduce(): ${student.introduce()}`);
+  }
+
+  if (action === "update") {
+    // Update property: grade
+    const newGrade = prompt(`Enter new grade for ${student.name}`, student.grade);
+    if (newGrade === null) return;
+
+    // Update using dot notation
+    student.grade = newGrade.trim() || student.grade;
+
+    log(`Updated grade: ${student.name} -> ${student.grade}`);
+    render();
+  }
+
+  if (action === "toggleCity") {
+    // Demonstrate add/delete + optional chaining
+    if (student.address?.city) {
+      // delete property by removing nested object
+      delete student.address; // removing address completely
+      log(`Removed address from ${student.name} (delete student.address)`);
+    } else {
+      student.address = { city: "Kyoto" }; // add nested object
+      log(`Added address to ${student.name}: city=Kyoto`);
+    }
+    render();
+  }
+
+  if (action === "remove") {
+    students.splice(index, 1);
+    log(`Removed student at index ${index}`);
+    render();
+  }
+});
+
+// ---------- REFERENCES & COPYING ----------
+/*
+  - Reference copy: let b = a (same object)
+  - Shallow copy: {...obj} or Object.assign({}, obj) (nested still shared)
+  - Deep copy: structuredClone(obj) (nested copied)
+*/
+cloneBtn.addEventListener("click", () => {
+  if (students.length === 0) return alert("Add at least 1 student first.");
+
+  const first = students[0];
+
+  // SHALLOW copy (top-level properties only)
+  const shallow = { ...first };
+
+  // IMPORTANT: shallow copy loses methods from constructor prototype style,
+  // but in this constructor we stored methods as own properties, so it will copy them too.
+  // Nested objects (address) will still share reference.
+
+  // Change name to show it's a separate top-level object now
+  shallow.name = first.name + " (Shallow Copy)";
+
+  // Keep same symbol id? Symbol keys are copied by spread, yes (own symbol keys included).
+  // But we can also set a new internal id to show difference:
+  shallow[INTERNAL_ID] = Math.floor(Math.random() * 90000) + 10000;
+
+  students.push(shallow);
+
+  log("Created SHALLOW copy of first student using spread {...first}");
+  log("Note: If first.address exists, shallow.address points to SAME nested object.");
+  render();
+});
+
+deepCloneBtn.addEventListener("click", () => {
+  if (students.length === 0) return alert("Add at least 1 student first.");
+
+  const first = students[0];
+
+  // DEEP copy (copies nested objects too)
+  // structuredClone works in modern browsers.
+  const deep = structuredClone(first);
+
+  // BUT: structuredClone does NOT clone functions/methods.
+  // So deep.introduce and Symbol.toPrimitive may be missing after cloning.
+  // We'll reattach them for teaching purposes:
+
+  deep.introduce = function () {
+    return `Hi! I'm ${this.name} and I study ${this.course}.`;
+  };
+
+  deep[Symbol.toPrimitive] = function (hint) {
+    if (hint === "string") return `Student(${this.name})`;
+    if (hint === "number") return this.age;
+    return this.name;
+  };
+
+  // Symbol keys may or may not be preserved depending on environment.
+  // We'll set a fresh symbol id for clarity:
+  deep[INTERNAL_ID] = Math.floor(Math.random() * 90000) + 10000;
+
+  deep.name = first.name + " (Deep Copy)";
+
+  students.push(deep);
+
+  log("Created DEEP copy using structuredClone(first)");
+  log("Note: Deep copy clones nested objects (address is separate now).");
+  log("Note: structuredClone does NOT clone functions, so we re-attached methods.");
+  render();
+});
+
+// ---------- GARBAGE COLLECTION DEMO ----------
+/*
+  We can't force garbage collection manually.
+  But we can explain: objects become collectible when no references exist.
+*/
+function garbageCollectionDemo() {
+  let temp = { data: "Temporary object" };
+  log("Created temp object. It exists while temp points to it.");
+
+  temp = null;
+  log("Set temp = null. Now the object is unreachable → eligible for garbage collection.");
+}
+
+// ---------- CONCEPTS DEMO BUTTON ----------
+demoBtn.addEventListener("click", () => {
+  resetLog();
+
+  log("=== Concepts Demo Start ===");
+
+  // 1) Objects basics
+  const obj = { a: 1, b: 2 };
+  log("Object basics: obj = { a:1, b:2 }");
+
+  // 2) Add/update/delete
+  obj.c = 3;
+  log("Added obj.c = 3");
+  obj["b"] = 99;
+  log('Updated obj["b"] = 99');
+  delete obj.a;
+  log("Deleted obj.a");
+
+  // 3) Reference copy
+  const ref1 = { name: "Ref" };
+  const ref2 = ref1;
+  ref2.name = "Changed via ref2";
+  log(`Reference copy: ref1.name is now "${ref1.name}" because ref2 points to same object`);
+
+  // 4) Shallow copy nested reference example
+  const nested = { address: { city: "Kyoto" } };
+  const shallow = { ...nested };
+  shallow.address.city = "Osaka";
+  log(`Shallow copy: nested.address.city became "${nested.address.city}" (same nested reference)`);
+
+  // 5) Optional chaining
+  const safe = { };
+  log(`Optional chaining: safe.address?.city => ${safe.address?.city}`);
+
+  // 6) Symbol type
+  const sym = Symbol("x");
+  const symObj = { [sym]: 123 };
+  log(`Symbol key: symObj[sym] => ${symObj[sym]}`);
+
+  // 7) Object → primitive
+  const prim = {
+    name: "Prim",
+    [Symbol.toPrimitive](hint) {
+      return hint === "number" ? 10 : "PrimString";
+    }
+  };
+  log(`To primitive (string): String(prim) => ${String(prim)}`);
+  log(`To primitive (number): prim + 5 => ${prim + 5}`);
+
+  // 8) Garbage collection concept
+  garbageCollectionDemo();
+
+  log("=== Concepts Demo End ===");
+});
+
+// ---------- CLEAR ALL ----------
+clearBtn.addEventListener("click", () => {
+  students = [];
+  resetLog();
+  log("Cleared all students. (Old objects may become unreachable if no other references exist.)");
+  render();
+});
+
+// ---------- INITIAL SEED DATA (Optional) ----------
+students.push(new Student("Kiran", 20, "JavaScript", "Kyoto"));
+students.push(new Student("Sese", 21, "HTML & CSS", ""));
+students[0].grade = "A";
+students[1].grade = "B";
+
+render();
